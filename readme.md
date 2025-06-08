@@ -10,17 +10,17 @@
 - Platform Like Faceit 
 
 ### TODO
- [x] Login System 
- [x] Register System
- [/] Matchmaking Panel (Only web part done)
- [] SM plugin
- [] Matchmaking server
- [] Leaderboards
- [] Profile preview
- [] Rank system
- [] Level System
+- [x] Login System 
+- [x] Register System
+- [/] Matchmaking Panel (Only web part done)
+- [] SM plugin
+- [] Matchmaking server
+- [] Leaderboards
+- [] Profile preview
+- [] Rank system
+- [] Level System
 
 
-# Credits:
-<a href="https://github.com/Zordon1337">Zordon1337 - This Project</a>
-<a href="https://github.com/ValveSoftware">Valve - CSGO assets</a>
+# Credits:<br>
+<a href="https://github.com/Zordon1337">Zordon1337 - This Project</a><br>
+<a href="https://github.com/ValveSoftware">Valve - CSGO assets</a><br>
