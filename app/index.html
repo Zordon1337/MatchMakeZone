@@ -20,6 +20,7 @@
             }
         })
     </script>
+    
     <script src="src/js/matchmaking.js"></script>
 </head>
 <body>
@@ -63,7 +64,8 @@
                 </div>
 
                 <div class="bottom-bar">
-                    <button class="queue-btn">Find Match</button>
+                    <h1 id="mm-clock" style="display: none;">0:00</h1>
+                    <button class="queue-btn" onclick="matchmake();">Find Match</button>
                 </div>
             </div>
         </div>
@@ -86,13 +88,15 @@
                     let uinfo = document.getElementById("userinfo")
                     uinfo.href = "/profile?id="+json.user_id;
                     uinfo.innerText = `Hello ${json.user.username}`
+                    username = json.user.username;
+                    steamid = json.user.steamid;
                 })
             } else {
                 document.location.href = "/login"
             }
         })
 
-        setGamemode("5v5")
+        setGamemode("2v2")
     </script>
 </body>
 </html>

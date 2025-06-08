@@ -1,0 +1,14 @@
+{
+  "name": "mmz-matchmaking",
+  "version": "1.0.0",
+  "description": "matchmaking server for mmz",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Zordon1337",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
+}

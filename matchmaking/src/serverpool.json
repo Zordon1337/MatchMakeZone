@@ -1,0 +1,8 @@
+[
+    {
+        "ip": "127.0.0.1",
+        "rconip": "127.0.0.1",
+        "rconport": "27015",
+        "rconpassword": "verysecurepassword"
+    }
+]
