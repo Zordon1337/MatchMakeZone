@@ -1,0 +1,35 @@
+{
+    "name": "srcds-rcon",
+    "version": "2.2.1",
+    "description": "A node.js driver for the SRCDS RCON",
+    "main": "index.js",
+    "scripts": {
+        "start": "node .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/randunel/node-srcds-rcon.git"
+    },
+    "keywords": [
+        "valve",
+        "srcds",
+        "hlds",
+        "rcon",
+        "half",
+        "life",
+        "counter",
+        "strike"
+    ],
+    "author": "Mihai Ene <dkrandu@yahoo.com>",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/randunel/node-srcds-rcon/issues"
+    },
+    "homepage": "https://github.com/randunel/node-srcds-rcon#readme",
+    "devDependencies": {
+        "should": "~7.1.1",
+        "mocha": "~2.3.4"
+    }
+}
+

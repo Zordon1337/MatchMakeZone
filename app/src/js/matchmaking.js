@@ -2,40 +2,54 @@ let ws;
 let steamid = 0;
 let username = "";
 let searching = false;
+let timerInterval;
+let secondsElapsed = 0;
+
+function updateTimerDisplay() {
+    let minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+    let seconds = String(secondsElapsed % 60).padStart(2, '0');
+    document.getElementById("mm-clock").innerText = `${minutes}:${seconds}`;
+}
+
 function connectWS() {
-  ws = new WebSocket('ws://127.0.0.1:9797'); 
+    ws = new WebSocket('ws://127.0.0.1:9797'); 
 
-  ws.onopen = () => {
-    let packet = {
-        "pid": "Client2MM_Hello",
-        "steamid": steamid,
-        "username": username
-    }
-    ws.send(JSON.stringify(packet))
-  };
+    ws.onopen = () => {
+      let packet = {
+          "pid": "Client2MM_Hello",
+          "steamid": steamid,
+          "username": username
+      }
+      ws.send(JSON.stringify(packet))
+    };
 
-  ws.onmessage = (event) => {
-    let msg = JSON.parse(event.data);
-    console.log("Received from server:", msg);
+    ws.onmessage = (event) => {
+      let msg = JSON.parse(event.data);
+      console.log("Received from server:", msg);
 
-    if (msg.pid === "MM2Client_FoundMatch") {
-      alert(`Match found! Map: ${msg.map}, Server IP: ${msg.serverip}`);
-      document.getElementById("mm-clock").style.display = 'none';
-    }
-  };
+      if (msg.pid === "MM2Client_FoundMatch") {
+        alert(`Match found! Map: ${msg.map}, Server IP: ${msg.serverip}`);
+        document.getElementById("mm-clock").style.display = 'none';
+        cancelSearch(true);
+      }
+      if (msg.pid === "MM2Client_MatchmakeFail") {
+        alert(`Matchmaking failed for following reason: ${msg.why}`)
+        cancelSearch(true);
+      }
+    };
 
-  ws.onclose = () => {
-    console.log("WebSocket disconnected, reconnecting in 3s...");
-    setTimeout(connectWS, 3000);
-  };
+    ws.onclose = () => {
+      console.log("WebSocket disconnected, reconnecting in 3s...");
+      setTimeout(connectWS, 3000);
+    };
 
-  ws.onerror = (e) => {
-    console.error("WebSocket error", e);
-  };
+    ws.onerror = (e) => {
+      console.error("WebSocket error", e);
+    };
 }
 
 window.onload = () => {
-  connectWS();
+    connectWS();
 };
 
 function pickMap(map) {
@@ -98,43 +112,52 @@ function setGamemode(mode) {
 }
 
 function matchmake() {
-
     if(searching) {
-        cancelSearch();
+        cancelSearch(false);
         return;
     }
-    let isWingman = document.getElementById("wmbtn").classList.contains("mode-card-active");
-    let isComp = !isWingman
 
+    let isWingman = document.getElementById("wmbtn").classList.contains("mode-card-active");
     let maps = []
     let mappick = document.getElementsByClassName("map-tile-active");
     for(let i = 0; i < mappick.length; i++) {
         maps.push(mappick.item(i).innerText)
     }
+
     let packet = {
         "pid": "Client2MM_FindMatch",
-        "gamemode": isWingman ? 1 : 0,
+        "gamemode": isWingman ? 2 : 1,
         "maps": maps
     }
 
-    document.getElementById("mm-clock").style.display = 'block';
-
     if(ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(packet));
+        ws.send(JSON.stringify(packet));
     } else {
-      alert("Connection to server lost...");
+        alert("Connection to server lost...");
     }
 
+    document.getElementById("mm-clock").style.display = 'block';
     document.getElementsByClassName("queue-btn")[0].innerText = "Cancel Search";
     searching = true;
+
+    secondsElapsed = 0;
+    updateTimerDisplay(); 
+    timerInterval = setInterval(() => {
+      secondsElapsed++;
+      updateTimerDisplay();
+    }, 1000);
 }
 
-function cancelSearch() {
-    if(ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ pid: "Client2MM_CancelSearch" }));
-      document.getElementById("mm-clock").style.display = 'none';
-      document.getElementsByClassName("queue-btn")[0].innerText = "Find Match";
+function cancelSearch(skipWS) {
+    if(!skipWS && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ pid: "Client2MM_CancelSearch" }));
     }
+
+    document.getElementById("mm-clock").style.display = 'none';
+    document.getElementsByClassName("queue-btn")[0].innerText = "Find Match";
     searching = false;
-  }
-  
+
+    clearInterval(timerInterval);
+    secondsElapsed = 0;
+    updateTimerDisplay();
+}

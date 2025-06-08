@@ -12,14 +12,15 @@
 ### TODO
 - [x] Login System 
 - [x] Register System
-- [/] Matchmaking Panel (Only web part done)
-- [ ] SM plugin
-- [ ] Matchmaking server
+- [X] Matchmaking Panel (Only web part done)
+- [/] SM plugin (Most of plans are done, but still some left)
+- [X] Matchmaking server
 - [ ] Leaderboards
 - [ ] Profile preview
 - [ ] Rank system
 - [ ] Level System
-
+- [ ] Implement proper competetive(Currently both modes are wingmans just with other map pool)
+- [ ] Fix ongoing_matches not being cleared and match submit(aka recode 90% of shit plugin)
 
 # Credits:<br>
 <a href="https://github.com/Zordon1337">Zordon1337 - This Project</a><br>

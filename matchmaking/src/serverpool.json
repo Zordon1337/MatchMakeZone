@@ -1,8 +1,7 @@
 [
     {
-        "ip": "127.0.0.1",
-        "rconip": "127.0.0.1",
-        "rconport": "27015",
+        "ip": "192.168.56.1",
+        "port": 27017,
         "rconpassword": "verysecurepassword"
     }
 ]
