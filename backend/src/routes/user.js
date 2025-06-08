@@ -6,9 +6,9 @@ const tokenUtils = require('../utils/token');
 
 router.get('/info', (req,res) => {
         const u = req.cookies.user;
-        if (!u) res.status(401);
+        if (!u) return res.status(401);
         let jsonparsed = JSON.parse(u);
-        if(!jsonparsed) res.status(500);
+        if(!jsonparsed) return res.status(500);
 
 
         const user = tokenUtils.verifyToken(jsonparsed.token)
@@ -19,15 +19,15 @@ router.get('/info', (req,res) => {
                 }
                 if (rows.length === 0) {
                     // what?
-                    res.json({error: "User doesn't exist"}).status(401);
+                    return res.status(403).json({error: "User doesn't exist"});
                 }
-                res.json({
+                return res.json({
                     user_id: user.id,
                     user: rows[0]
                 })
             });
         } else {
-            res.status(401);
+            return res.status(401);
         }
 })
 

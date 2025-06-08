@@ -16,32 +16,33 @@ router.post('/register', (req, res) => {
       if (result.length > 0) {
         return res.status(400).json({ error: 'Account with such name or email already exists' });
       }
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      var response = {}
+      db.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, hashedPassword, email], (err, result) => {
+          if (err) {
+              console.error('Database error:', err);
+              return res.status(500).json({ error: 'Internal server error' });
+          }
+          if (result.affectedRows === 0) {
+              return res.status(400).json({ error: 'Failed to register user' });
+          }
+          const user = {
+              user_id: result.insertId,
+              username: username,
+              email: email,
+              steamid: 0
+          };
+          const token = tokenUtils.generateToken(user);
+          res.cookie('user', JSON.stringify({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } }), {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            maxAge: 180 * 24 * 60 * 60 * 1000
+          })
+          res.json({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } }); 
+        });
     });
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    var response = {}
-    db.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, hashedPassword, email], (err, result) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(400).json({ error: 'Failed to register user' });
-        }
-        const user = {
-            id: result.insertId,
-            username: username,
-            email: email,
-            steamid: 0
-        };
-        const token = tokenUtils.generateToken(user);
-        res.cookie('user', JSON.stringify({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } }), {
-          httpOnly: true,
-          secure: false,
-          sameSite: "strict",
-          maxAge: 180 * 24 * 60 * 60 * 1000
-        })
-        res.json({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } }); 
-      });
+    
 });
 
 router.post('/login', (req, res) => {
@@ -71,7 +72,7 @@ router.post('/login', (req, res) => {
             sameSite: "strict",
             maxAge: 180 * 24 * 60 * 60 * 1000
           })
-          res.json({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } });
+          return res.json({ token: token, user: { id: user.user_id, username: user.username, email: user.email, steamid: user.steamid } });
         })
     });
 });
