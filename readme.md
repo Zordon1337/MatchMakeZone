@@ -13,12 +13,12 @@
 - [x] Login System 
 - [x] Register System
 - [/] Matchmaking Panel (Only web part done)
-- [] SM plugin
-- [] Matchmaking server
-- [] Leaderboards
-- [] Profile preview
-- [] Rank system
-- [] Level System
+- [ ] SM plugin
+- [ ] Matchmaking server
+- [ ] Leaderboards
+- [ ] Profile preview
+- [ ] Rank system
+- [ ] Level System
 
 
 # Credits:<br>
