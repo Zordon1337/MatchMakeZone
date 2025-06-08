@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main - Matchmakezone</title>
+    <link rel="stylesheet" href="src/style.css">
+    <script>
+        fetch('http://127.0.0.1:1337/api/v1/token/validate', {
+            method: "GET",
+            credentials: 'include',
+            headers: {
+                "Content-Type": "application/json"
+            },
+        }).then(response => {
+            if(response.ok) {
+                // idk
+            } else {
+                document.location.href = "/login"
+            }
+        })
+    </script>
+    <script src="src/js/matchmaking.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar">
+            <div id="left">
+                <h4>MatchmakeZone</h4>
+                <a href="/">Matchmaking</a>
+                <a href="/link">Link Steam Account</a>
+            </div>
+            <div id="right">
+                <div id="user">
+                    <img src="https://avatars.fastly.steamstatic.com/c5affa40d6ff95c719c2ad8752704ba506a4f002_full.jpg" height="38" width="38">
+                    <a id="userinfo" href="/profile?id=1">Hello User!</a>
+                </div>
+                <a href="/logout">Log out</a>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div id="content">
+            <div class="header">
+                <h1>Matchmaking</h1>
+                <span>(beta)</span>
+            </div>
+
+            <div id="matchmake-panel">
+                <div class="mode-section">
+                    <h2>Select Gamemode</h2>
+                    <div class="mode-grid">
+                        <div class="mode-card" id="compbtn" onclick="setGamemode('5v5')">Competetive</div>
+                        <div class="mode-card" id="wmbtn" onclick="setGamemode('2v2')">Wingman</div>
+                    </div>
+                </div>
+
+                <div class="map-section">
+                    <h2>Select Maps</h2>
+                    <div class="map-grid">
+                        
+                    </div>
+                </div>
+
+                <div class="bottom-bar">
+                    <button class="queue-btn">Find Match</button>
+                </div>
+            </div>
+        </div>
+    </main>      
+    <footer>
+
+    </footer>
+    <script>
+        fetch('http://127.0.0.1:1337/api/v1/user/info',
+            {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            }
+        ).then(response => {
+            if(response.ok) {
+                response.json().then(json => {
+                    let uinfo = document.getElementById("userinfo")
+                    uinfo.href = "/profile?id="+json.user_id;
+                    uinfo.innerText = `Hello ${json.user.username}`
+                })
+            } else {
+                document.location.href = "/login"
+            }
+        })
+
+        setGamemode("5v5")
+    </script>
+</body>
+</html>

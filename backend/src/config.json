@@ -1,0 +1,12 @@
+{
+    "backendUrl": "http://localhost:1337",
+    "frontendUrl": "http://localhost:1338",
+    "secureKey":    "verysecurekey",
+    "db": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "root",
+        "password": "",
+        "database": "mmzone"
+    }
+}
