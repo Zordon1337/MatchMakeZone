@@ -424,7 +424,7 @@ public void Event_GameEnd(Event event, const char[] name, bool dontBroadcast)
 
 
 
-    CreateTimer(5.0, Timer_KickPlayers, _, TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(15.0, Timer_KickPlayers, _, TIMER_FLAG_NO_MAPCHANGE);
     PrintToServer("[MM] Event_GameEnd END");
 }
 public Action Timer_KickPlayers(Handle timer)
