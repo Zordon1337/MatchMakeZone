@@ -83,7 +83,7 @@ function addMap(map) {
     .replace("dz_","")
     .replace("cs_","");
     
-    m.innerText = cstn.charAt(0).toUpperCase() + cstn.slice(1);
+    m.innerHTML = `<p>${cstn.charAt(0).toUpperCase() + cstn.slice(1)}</p>`
     var lst = document.getElementsByClassName("map-grid")[0]
     if(lst) lst.appendChild(m);
 }

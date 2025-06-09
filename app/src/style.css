@@ -124,15 +124,15 @@ body {
 }
   
 .map-tile {
-    width: 150px;
-    height: 220px;
+    width: 250px;
+    height: 320px;
     background-size: auto 100%;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
-    border-radius: 8px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 2px solid transparent;
+    border: 2px solid white;
     cursor: pointer;
     transition: transform 0.2s, border 0.2s;
     display: flex;
@@ -143,6 +143,7 @@ body {
     font-size: 1rem;
     text-shadow: 0 0 5px black;
     padding-bottom: 8px;
+    z-index: 0;
 }
   
 .map-tile:hover {
@@ -165,6 +166,11 @@ body {
     padding-bottom: 10px;
     text-align: center;
     font-size: 0.9rem;
+    height: 25px;
+    z-index: 1;
+}
+.map-tile p {
+    z-index: 2;
 }
   
 .bottom-bar {
