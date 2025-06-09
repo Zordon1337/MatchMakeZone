@@ -70,12 +70,20 @@ function addMap(map) {
     m.style = `background-image: url('src/icons/${map}.png');`;
     m.id = map;
     m.onclick = () => pickMap(map);
+    if(map === "gd_cbble") 
+        {
+            map = "Cobblestone"
+        }
+    if(map.includes("short")) {
+        map = map.replace("short","")
+    }
     let cstn = map.replace("de_","")
     .replace("gd_","")
     .replace("ar_","")
     .replace("dz_","")
     .replace("cs_","");
-    m.innerText = cstn;
+    
+    m.innerText = cstn.charAt(0).toUpperCase() + cstn.slice(1);
     var lst = document.getElementsByClassName("map-grid")[0]
     if(lst) lst.appendChild(m);
 }
