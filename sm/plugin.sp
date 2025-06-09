@@ -114,7 +114,34 @@ public void SQL_Callback_Nothing(Handle owner, Handle hndl, const char[] error, 
 }
 void UpdateOrInsertRank(int user_id, int client)
 {
-    PrintToServer("[MM] UpdateOrInsertRank Start")
+    int team = GetClientTeam(client);
+    bool didWin = false;
+    int wonRounds = 0;
+    int lostRounds = 0;
+
+    if (team == 2)
+    {
+        wonRounds = g_RoundsWon[0];
+        lostRounds = g_RoundsWon[1];
+        if (wonRounds > lostRounds)
+        {
+            didWin = true;
+        }
+    }
+    else if (team == 3)
+    {
+        wonRounds = g_RoundsWon[1];
+        lostRounds = g_RoundsWon[0];
+        if (wonRounds > lostRounds)
+        {
+            didWin = true;
+        }
+    }
+
+    int wins = didWin ? 1 : 0;
+
+    PrintToServer("[MM] UpdateOrInsertRank Start");
+
     if (g_db == null)
     {
         PrintToServer("[MM] Database not connected.");
@@ -126,24 +153,47 @@ void UpdateOrInsertRank(int user_id, int client)
 
     char checkQuery[256];
     Format(checkQuery, sizeof(checkQuery),
-        "SELECT rank_id FROM ranks WHERE user_id = %d AND rank_type = '%s'",
+        "SELECT rank_id, kills, deaths, assists, ace_count FROM ranks WHERE user_id = %d AND rank_type = '%s'",
         user_id, escapedRankType);
 
     DBResultSet res = SQL_Query(g_db, checkQuery);
     if (res != null && res.FetchRow())
-    {   
+    {
+        int currentKills   = res.FetchInt(1);
+        int currentDeaths  = res.FetchInt(2);
+        int currentAssists = res.FetchInt(3);
+        int currentAces    = res.FetchInt(4);
+
+        PrintToServer("[MM] Current stats for user %d - K: %d, D: %d, A: %d, ACE: %d",
+            user_id, currentKills, currentDeaths, currentAssists, currentAces);
+        int newElo = 0;
+
+        if(didWin) {
+            newElo += 100 * (wonRounds - lostRounds);
+            newElo += 10 * ((g_Kills[client] + g_Assists[client]) / g_Deaths[client]);
+        } else {
+            newElo -= 100 * (lostRounds - wonRounds);
+            if(g_Kills[client] < g_Deaths[client])
+            {
+                newElo -= 15 * g_Deaths[client]
+            }
+        }
         char updateQuery[512];
         Format(updateQuery, sizeof(updateQuery),
             "UPDATE ranks SET \
                 kills = kills + %d, \
                 deaths = deaths + %d, \
                 assists = assists + %d, \
-                ace_count = ace_count + %d \
+                ace_count = ace_count + %d, \
+                wins = wins + %d \
+                elo = elo + %d \
              WHERE user_id = %d AND rank_type = '%s'",
             g_Kills[client],
             g_Deaths[client],
             g_Assists[client],
             g_Aces[client],
+            wins,
+            newElo,
             user_id,
             escapedRankType
         );
@@ -155,21 +205,23 @@ void UpdateOrInsertRank(int user_id, int client)
     {
         char insertQuery[512];
         Format(insertQuery, sizeof(insertQuery),
-            "INSERT INTO ranks (user_id, rank_type, elo, ace_count, kills, deaths, assists) VALUES (%d, '%s', 0, %d, %d, %d, %d)",
+            "INSERT INTO ranks (user_id, rank_type, elo, ace_count, kills, deaths, assists, wins) VALUES (%d, '%s', 0, %d, %d, %d, %d, %d)",
             user_id,
             escapedRankType,
             g_Aces[client],
             g_Kills[client],
             g_Deaths[client],
-            g_Assists[client]
+            g_Assists[client],
+            wins
         );
         SQL_TQuery(g_db, SQL_Callback_Nothing, insertQuery);
         PrintToServer("[MM] Inserted new rank for user_id %d (type: %s).", user_id, escapedRankType);
     }
 
     delete res;
-    PrintToServer("[MM] UpdateOrInsertRank END")
+    PrintToServer("[MM] UpdateOrInsertRank END");
 }
+
 
 public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
@@ -204,7 +256,7 @@ public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
         if (IsClientInGame(i))
         {
             int kills = GetEntProp(i, Prop_Data, "m_iNumRoundKills");
-            if (kills >= g_EnemyCountAtRoundStart[i] && g_EnemyCountAtRoundStart[i] > 0)
+            if (kills >= 5)
             {
                 g_Aces[i]++;
             }
