@@ -171,7 +171,6 @@ int CalculateEloChange(int client, bool didWin, int wonRounds, int lostRounds)
 
     return newElo;
 }
-// Pass a buffer and its size to copy the rank name into
 void GetCSGORankName(int elo, char[] rankName, int maxLen)
 {
     if (elo <= 0)
@@ -302,7 +301,7 @@ void UpdateOrInsertRank(int user_id, int client)
         int currentAssists = res.FetchInt(3);
         int currentAces    = res.FetchInt(4);
         oldElo            = res.FetchInt(5);
-        
+
         GetCSGORankName(oldElo, oldRankName, sizeof(oldRankName));
         int newEloDelta = CalculateEloChange(client, didWin, wonRounds, lostRounds);
         if (newEloDelta > 50) newEloDelta = 50;
@@ -408,7 +407,7 @@ public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 public void Event_GameEnd(Event event, const char[] name, bool dontBroadcast)
 {
-    PrintToServer("[MM] Event_GameEnd START")
+    PrintToServer("[MM] Event_GameEnd START");
     for (int i = 1; i <= MaxClients; i++)
     {
         if (IsClientInGame(i))
@@ -416,8 +415,25 @@ public void Event_GameEnd(Event event, const char[] name, bool dontBroadcast)
             SavePlayerMatchStats(i);
         }
     }
-    PrintToServer("[MM] Event_GameEnd END")
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientInGame(i))
+        {
+            KickClient(i, "Match ended. You have been kicked.");
+        }
+    }
+
+    for (int i = 0; i < g_WhitelistCount; i++)
+    {
+        g_Whitelist[i][0] = '\0';
+    }
+    g_WhitelistCount = 0;
+    PrintToServer("[MM] Whitelist cleared.");
+
+    PrintToServer("[MM] Event_GameEnd END");
 }
+
 
 void SavePlayerMatchStats(int client)
 {
