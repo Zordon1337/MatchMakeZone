@@ -14,6 +14,8 @@ int g_Assists[MAXPLAYERS + 1];
 int g_Aces[MAXPLAYERS + 1];
 int g_RoundsWon[2];
 int g_EnemyCountAtRoundStart[MAXPLAYERS + 1];
+int g_MVPs[MAXPLAYERS + 1];
+int g_RoundKills[MAXPLAYERS + 1];
 
 char g_CurrentMap[MAX_MAP_NAME];
 Database g_db;
@@ -31,12 +33,25 @@ public void OnPluginStart()
     HookEvent("cs_win_panel_match", Event_GameEnd);
     HookEvent("nextlevel_changed", Event_MapStart);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
+    HookEvent("round_mvp", Event_RoundMVP);
     SQL_TConnect(OnDBConnect, "mmzone", 0);
 
 
     GetCurrentMap(g_CurrentMap, sizeof(g_CurrentMap));
     ResetStats();
 }
+public void Event_RoundMVP(Event event, const char[] name, bool dontBroadcast)
+{
+    int userid = event.GetInt("userid");
+    int client = GetClientOfUserId(userid);
+
+    if (client > 0 && client <= MaxClients && IsClientInGame(client))
+    {
+        g_MVPs[client]++;
+        PrintToServer("[MM] MVP awarded to: %N", client);
+    }
+}
+
 public Action Command_SetRankType(int args)
 {
     if (args < 1)
@@ -112,6 +127,128 @@ public void SQL_Callback_Nothing(Handle owner, Handle hndl, const char[] error, 
         PrintToServer("[MM] SQL error: %s", error);
     }
 }
+int CalculateEloChange(int client, bool didWin, int wonRounds, int lostRounds)
+{
+    int newElo = 0;
+
+    float safeDeaths = (g_Deaths[client] > 0) ? float(g_Deaths[client]) : 1.0;
+
+    float kdr = float(g_Kills[client]) / safeDeaths;
+    float assistBonus = float(g_Assists[client]) * 0.3;
+    float aceBonus = float(g_Aces[client]) * 2.0;
+    float mvpBonus = float(g_MVPs[client]) * 1.0;
+
+    float performanceScore = kdr + assistBonus + aceBonus + mvpBonus;
+
+    float roundMargin = float(wonRounds - lostRounds);
+    float closenessFactor = 1.0 - (FloatAbs(roundMargin) / 15.0);
+    if (closenessFactor < 0.1)
+    {
+        closenessFactor = 0.1;
+    }
+
+    int baseEloChange = 25;
+
+    if (didWin)
+    {
+        newElo += RoundToFloor(float(baseEloChange) * closenessFactor);
+        newElo += RoundToFloor(performanceScore);
+    }
+    else
+    {
+        newElo -= RoundToCeil(float(baseEloChange) * (1.1 - closenessFactor));
+        newElo += RoundToFloor(performanceScore * 0.5);
+    }
+
+    if (newElo > 50)
+    {
+        newElo = 50;
+    }
+    else if (newElo < -40)
+    {
+        newElo = -40;
+    }
+
+    return newElo;
+}
+// Pass a buffer and its size to copy the rank name into
+void GetCSGORankName(int elo, char[] rankName, int maxLen)
+{
+    if (elo <= 0)
+    {
+        strcopy(rankName, maxLen, "Silver I");
+    }
+    else if (elo <= 199)
+    {
+        strcopy(rankName, maxLen, "Silver II");
+    }
+    else if (elo <= 399)
+    {
+        strcopy(rankName, maxLen, "Silver III");
+    }
+    else if (elo <= 599)
+    {
+        strcopy(rankName, maxLen, "Silver IV");
+    }
+    else if (elo <= 799)
+    {
+        strcopy(rankName, maxLen, "Silver Elite");
+    }
+    else if (elo <= 999)
+    {
+        strcopy(rankName, maxLen, "Silver Elite Master");
+    }
+    else if (elo <= 1199)
+    {
+        strcopy(rankName, maxLen, "Gold Nova I");
+    }
+    else if (elo <= 1399)
+    {
+        strcopy(rankName, maxLen, "Gold Nova II");
+    }
+    else if (elo <= 1599)
+    {
+        strcopy(rankName, maxLen, "Gold Nova III");
+    }
+    else if (elo <= 1799)
+    {
+        strcopy(rankName, maxLen, "Gold Nova Master");
+    }
+    else if (elo <= 1999)
+    {
+        strcopy(rankName, maxLen, "Master Guardian I");
+    }
+    else if (elo <= 2199)
+    {
+        strcopy(rankName, maxLen, "Master Guardian II");
+    }
+    else if (elo <= 2399)
+    {
+        strcopy(rankName, maxLen, "Master Guardian Elite");
+    }
+    else if (elo <= 2599)
+    {
+        strcopy(rankName, maxLen, "Distinguished Master");
+    }
+    else if (elo <= 2799)
+    {
+        strcopy(rankName, maxLen, "Legendary Eagle");
+    }
+    else if (elo <= 2999)
+    {
+        strcopy(rankName, maxLen, "Legendary Eagle Master");
+    }
+    else if (elo <= 3199)
+    {
+        strcopy(rankName, maxLen, "Supreme Master First");
+    }
+    else
+    {
+        strcopy(rankName, maxLen, "Global Elite");
+    }
+}
+
+
 void UpdateOrInsertRank(int user_id, int client)
 {
     int team = GetClientTeam(client);
@@ -140,8 +277,6 @@ void UpdateOrInsertRank(int user_id, int client)
 
     int wins = didWin ? 1 : 0;
 
-    PrintToServer("[MM] UpdateOrInsertRank Start");
-
     if (g_db == null)
     {
         PrintToServer("[MM] Database not connected.");
@@ -153,31 +288,27 @@ void UpdateOrInsertRank(int user_id, int client)
 
     char checkQuery[256];
     Format(checkQuery, sizeof(checkQuery),
-        "SELECT rank_id, kills, deaths, assists, ace_count FROM ranks WHERE user_id = %d AND rank_type = '%s'",
+        "SELECT rank_id, kills, deaths, assists, ace_count, elo FROM ranks WHERE user_id = %d AND rank_type = '%s'",
         user_id, escapedRankType);
 
     DBResultSet res = SQL_Query(g_db, checkQuery);
+
+    int oldElo = 0;
+    char oldRankName[64] = "";
     if (res != null && res.FetchRow())
     {
         int currentKills   = res.FetchInt(1);
         int currentDeaths  = res.FetchInt(2);
         int currentAssists = res.FetchInt(3);
         int currentAces    = res.FetchInt(4);
+        oldElo            = res.FetchInt(5);
+        
+        GetCSGORankName(oldElo, oldRankName, sizeof(oldRankName));
+        int newEloDelta = CalculateEloChange(client, didWin, wonRounds, lostRounds);
+        if (newEloDelta > 50) newEloDelta = 50;
+        else if (newEloDelta < -40) newEloDelta = -40;
+        int updatedElo = oldElo + newEloDelta;
 
-        PrintToServer("[MM] Current stats for user %d - K: %d, D: %d, A: %d, ACE: %d",
-            user_id, currentKills, currentDeaths, currentAssists, currentAces);
-        int newElo = 0;
-
-        if(didWin) {
-            newElo += 100 * (wonRounds - lostRounds);
-            newElo += 10 * ((g_Kills[client] + g_Assists[client]) / g_Deaths[client]);
-        } else {
-            newElo -= 100 * (lostRounds - wonRounds);
-            if(g_Kills[client] < g_Deaths[client])
-            {
-                newElo -= 15 * g_Deaths[client]
-            }
-        }
         char updateQuery[512];
         Format(updateQuery, sizeof(updateQuery),
             "UPDATE ranks SET \
@@ -185,21 +316,30 @@ void UpdateOrInsertRank(int user_id, int client)
                 deaths = deaths + %d, \
                 assists = assists + %d, \
                 ace_count = ace_count + %d, \
-                wins = wins + %d \
-                elo = elo + %d \
-             WHERE user_id = %d AND rank_type = '%s'",
+                wins = wins + %d, \
+                elo = %d \
+            WHERE user_id = %d AND rank_type = '%s'",
             g_Kills[client],
             g_Deaths[client],
             g_Assists[client],
             g_Aces[client],
             wins,
-            newElo,
+            updatedElo,
             user_id,
             escapedRankType
         );
 
         SQL_TQuery(g_db, SQL_Callback_Nothing, updateQuery);
         PrintToServer("[MM] Updated rank for user_id %d (type: %s).", user_id, escapedRankType);
+        char newRankName[64];
+        GetCSGORankName(oldElo, newRankName, sizeof(newRankName));
+        if (StrEqual(oldRankName, newRankName, false) == false)
+        {
+            if (IsClientInGame(client))
+            {
+                PrintToChat(client, "[MM] Your rank changed from %s to %s!", oldRankName, newRankName);
+            }
+        }
     }
     else
     {
@@ -221,6 +361,8 @@ void UpdateOrInsertRank(int user_id, int client)
     delete res;
     PrintToServer("[MM] UpdateOrInsertRank END");
 }
+
+
 
 
 public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
