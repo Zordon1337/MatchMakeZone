@@ -99,11 +99,14 @@ function setGamemode(mode) {
             break;
         }
         case "2v2": {
-            addMap("de_shortdust");
+            addMap("gd_cbble");
+            addMap("de_inferno");
             addMap("de_lake");
+            addMap("de_shortdust");
             addMap("de_shortnuke");
             addMap("de_vertigo");
-            addMap("gd_cbble");
+            addMap("de_overpass");
+            addMap("de_train");
 
             document.getElementById("wmbtn").classList.add("mode-card-active")
             break;
