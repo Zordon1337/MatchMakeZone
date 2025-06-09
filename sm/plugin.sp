@@ -177,67 +177,67 @@ void GetCSGORankName(int elo, char[] rankName, int maxLen)
     {
         strcopy(rankName, maxLen, "Silver I");
     }
-    else if (elo <= 199)
+    else if (elo <= 100)
     {
         strcopy(rankName, maxLen, "Silver II");
     }
-    else if (elo <= 399)
+    else if (elo <= 200)
     {
         strcopy(rankName, maxLen, "Silver III");
     }
-    else if (elo <= 599)
+    else if (elo <= 300)
     {
         strcopy(rankName, maxLen, "Silver IV");
     }
-    else if (elo <= 799)
+    else if (elo <= 400)
     {
         strcopy(rankName, maxLen, "Silver Elite");
     }
-    else if (elo <= 999)
+    else if (elo <= 500)
     {
         strcopy(rankName, maxLen, "Silver Elite Master");
     }
-    else if (elo <= 1199)
+    else if (elo <= 600)
     {
         strcopy(rankName, maxLen, "Gold Nova I");
     }
-    else if (elo <= 1399)
+    else if (elo <= 700)
     {
         strcopy(rankName, maxLen, "Gold Nova II");
     }
-    else if (elo <= 1599)
+    else if (elo <= 800)
     {
         strcopy(rankName, maxLen, "Gold Nova III");
     }
-    else if (elo <= 1799)
+    else if (elo <= 900)
     {
         strcopy(rankName, maxLen, "Gold Nova Master");
     }
-    else if (elo <= 1999)
+    else if (elo <= 1000)
     {
         strcopy(rankName, maxLen, "Master Guardian I");
     }
-    else if (elo <= 2199)
+    else if (elo <= 1100)
     {
         strcopy(rankName, maxLen, "Master Guardian II");
     }
-    else if (elo <= 2399)
+    else if (elo <= 1200)
     {
         strcopy(rankName, maxLen, "Master Guardian Elite");
     }
-    else if (elo <= 2599)
+    else if (elo <= 1300)
     {
         strcopy(rankName, maxLen, "Distinguished Master");
     }
-    else if (elo <= 2799)
+    else if (elo <= 1400)
     {
         strcopy(rankName, maxLen, "Legendary Eagle");
     }
-    else if (elo <= 2999)
+    else if (elo <= 1500)
     {
         strcopy(rankName, maxLen, "Legendary Eagle Master");
     }
-    else if (elo <= 3199)
+    else if (elo <= 1600)
     {
         strcopy(rankName, maxLen, "Supreme Master First");
     }
@@ -415,15 +415,6 @@ public void Event_GameEnd(Event event, const char[] name, bool dontBroadcast)
             SavePlayerMatchStats(i);
         }
     }
-
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (IsClientInGame(i))
-        {
-            KickClient(i, "Match ended. You have been kicked.");
-        }
-    }
-
     for (int i = 0; i < g_WhitelistCount; i++)
     {
         g_Whitelist[i][0] = '\0';
@@ -431,9 +422,25 @@ public void Event_GameEnd(Event event, const char[] name, bool dontBroadcast)
     g_WhitelistCount = 0;
     PrintToServer("[MM] Whitelist cleared.");
 
+
+
+    CreateTimer(5.0, Timer_KickPlayers, _, TIMER_FLAG_NO_MAPCHANGE);
     PrintToServer("[MM] Event_GameEnd END");
 }
+public Action Timer_KickPlayers(Handle timer)
+{
+    PrintToServer("[MM] Kicking players after stats save...");
 
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientInGame(i) && IsClientConnected(i))
+        {
+            KickClient(i, "Match ended. Returning to queue...");
+        }
+    }
+
+    return Plugin_Stop;
+}
 
 void SavePlayerMatchStats(int client)
 {
