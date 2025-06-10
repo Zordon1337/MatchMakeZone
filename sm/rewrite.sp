@@ -31,6 +31,8 @@ public void OnPluginStart() {
 	RegServerCmd("sm_setwhitelist", CMD_WHITELIST);
 	RegServerCmd("sm_setranktype", CMD_SETRANKTYPE);
 	RegServerCmd("sm_getgamestage", CMD_GETGAMESTAGE);
+	
+	SQL_TConnect(OnDatabaseConn, "mmzone", 0);
 }
 
 public Action CMD_WHITELIST(int args) {
@@ -56,4 +58,13 @@ public Action CMD_SETRANKTYPE(int args) {
 
 public Action CMD_GETGAMESTAGE(int args) {
 	// im thinking also, about making instead of just getting game stage, blocking rcon connection instead and do an check on matchmaker side, anyways currently todo
+}
+
+public void OnDatabaseConn(Handle own, Handle handle, const char[] err, any data) {
+	if(err[0] != '\0') {
+		PrintToServer("[MM] Database connection err: %s", err);
+		return;
+	}
+	g_db = view_as<Database>(handle);
+	PrintToServer("[MM] Connected to DB");
 }
