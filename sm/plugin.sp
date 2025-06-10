@@ -34,12 +34,95 @@ public void OnPluginStart()
     HookEvent("nextlevel_changed", Event_MapStart);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_Post);
     HookEvent("round_mvp", Event_RoundMVP);
+    RegAdminCmd("sm_matchstate", Command_CheckMatchState, ADMFLAG_GENERIC, "Check if match is ongoing or server is free.");
     SQL_TConnect(OnDBConnect, "mmzone", 0);
 
 
     GetCurrentMap(g_CurrentMap, sizeof(g_CurrentMap));
     ResetStats();
 }
+public void OnClientPutInServer(int client)
+{
+    CreateTimer(1.0, Timer_CheckFullLobby, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+public Action Timer_CheckFullLobby(Handle timer)
+{
+    if (g_bMatchStarted || g_bAllPlayersReady)
+        return Plugin_Stop;
+
+    int total = 0;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientInGame(i) && !IsFakeClient(i))
+            total++;
+    }
+
+    if ((total == 4 && g_RankType == "2") || (total == 10 && g_RankType == "1"))
+    {
+        g_bAllPlayersReady = true;
+        AutoAssignTeams();
+    }
+
+    return Plugin_Stop;
+}
+void AutoAssignTeams()
+{
+    int tCount = 0;
+    int ctCount = 0;
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        if (tCount <= ctCount)
+        {
+            CS_SwitchTeam(i, CS_TEAM_T);
+            tCount++;
+        }
+        else
+        {
+            CS_SwitchTeam(i, CS_TEAM_CT);
+            ctCount++;
+        }
+    }
+
+    g_bMatchStarted = true;
+}
+public Action Timer_TimeoutExpired(Handle timer, any userid)
+{
+    char playerName[64];
+    int client = GetClientOfUserId(userid);
+
+    if (client > 0 && IsClientInGame(client))
+    {
+        return Plugin_Stop;
+    }
+
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (g_hReconnectTimerHandles[i] != null && GetClientUserId(i) == userid)
+        {
+            g_hReconnectTimerHandles[i] = null;
+            break;
+        }
+    }
+
+    return Plugin_Stop;
+}
+
+public Action Command_CheckMatchState(int client, int args)
+{
+    if (g_bMatchStarted)
+        ReplyToCommand(client, "1");
+    else
+        ReplyToCommand(client, "0");
+
+    return Plugin_Handled;
+}
+
+
 public void Event_RoundMVP(Event event, const char[] name, bool dontBroadcast)
 {
     int userid = event.GetInt("userid");
@@ -300,7 +383,6 @@ void UpdateOrInsertRank(int user_id, int client)
         int currentDeaths  = res.FetchInt(2);
         int currentAssists = res.FetchInt(3);
         int currentAces    = res.FetchInt(4);
-        oldElo            = res.FetchInt(5);
 
         GetCSGORankName(oldElo, oldRankName, sizeof(oldRankName));
         int newEloDelta = CalculateEloChange(client, didWin, wonRounds, lostRounds);
@@ -316,7 +398,7 @@ void UpdateOrInsertRank(int user_id, int client)
                 assists = assists + %d, \
                 ace_count = ace_count + %d, \
                 wins = wins + %d, \
-                elo = %d \
+                elo = elo + %d \
             WHERE user_id = %d AND rank_type = '%s'",
             g_Kills[client],
             g_Deaths[client],
