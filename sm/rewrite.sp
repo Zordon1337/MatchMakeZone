@@ -34,6 +34,7 @@ public void OnPluginStart() {
 	RegServerCmd("sm_setranktype", CMD_SETRANKTYPE);
 	RegServerCmd("sm_getgamestage", CMD_GETGAMESTAGE);
 	HookEvent("player_connect_full", HANDLER_PLAYERCONN);
+	// for some reason still cannot completely disable team menu, but joining is blocked so fuck it
 	AddCommandListener(HANDLER_JOINTEAM, "teammenu");
 	AddCommandListener(HANDLER_JOINTEAM, "jointeam");
 	SQL_TConnect(OnDatabaseConn, "mmzone", 0);
@@ -110,4 +111,30 @@ public Action TIMER_TEAMASSAIGN(Handle tm, any client) {
     CS_RespawnPlayer(client);
 
     return Plugin_Stop;
+}
+
+public void OnClientAuthorized(int client, const char[] auth) {
+	
+	if(StrEqual(auth, "BOT"))
+		return;
+		
+	PrintToServer("[Whitelist check] Client %d auth: %s", client, auth);
+	
+	bool bIsAllowed = false;
+	
+	for (int i = 0; i < g_WhitelistCount; i++) {
+		PrintToServer("[Whitelist check] Checking %d: %s".i, g_Whitelist[i]);
+		if(StrEqual(g_Whitelist[i], auth])) {
+			bIsAllowed = true;
+			break;
+		}
+	}
+	
+	if(!bIsAllowed) {
+		PrintToServer("[Whitelist check] Client %d failed check, kicking...", client);
+		KickClient(client, "You are not whitelisted.");
+	}
+	else {
+		PrintToServer("[Whitelist check] Client %d passed check", client);
+	}
 }
