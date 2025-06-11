@@ -6,6 +6,8 @@
 
 // vars
 
+bool g_bJoinTeamAllowed[MAXPLAYERS +1];
+
 // rank shit
 char g_RankType[32] = "-1"
 
@@ -31,11 +33,22 @@ public void OnPluginStart() {
 	RegServerCmd("sm_setwhitelist", CMD_WHITELIST);
 	RegServerCmd("sm_setranktype", CMD_SETRANKTYPE);
 	RegServerCmd("sm_getgamestage", CMD_GETGAMESTAGE);
-	
+	HookEvent("player_connect_full", HANDLER_PLAYERCONN);
+	AddCommandListener(HANDLER_JOINTEAM, "teammenu");
+	AddCommandListener(HANDLER_JOINTEAM, "jointeam");
 	SQL_TConnect(OnDatabaseConn, "mmzone", 0);
 }
 
+bool IsValidClient(int client)
+{
+    return client > 0 && client <= MaxClients && IsClientInGame(client);
+}
+
 public Action CMD_WHITELIST(int args) {
+	Handle cnv = FindConVar("mp_force_pick_time");
+	if(cnv) {
+		SetConVarInt(cnv, 0);
+	}
 	if (args < 1) {
 		PrintToServer("Missing parameters, sm_setwhitelist <steam2_id>");
 	}
@@ -67,4 +80,34 @@ public void OnDatabaseConn(Handle own, Handle handle, const char[] err, any data
 	}
 	g_db = view_as<Database>(handle);
 	PrintToServer("[MM] Connected to DB");
+}
+
+public Action HANDLER_JOINTEAM(int client, const char[] command, int argc) {
+    if (!IsValidClient(client))
+        return Plugin_Continue;
+
+
+    return Plugin_Handled;
+}
+
+void HANDLER_PLAYERCONN(Event event, const char[] name, bool dontBroadcast) {
+	int cl = GetClientOfUserId(event.GetInt("userid"));
+	
+	CreateTimer(1.0, TIMER_TEAMASSAIGN, cl);
+}
+
+public Action TIMER_TEAMASSAIGN(Handle tm, any client) {
+    if (!IsClientInGame(client))
+        return Plugin_Stop;
+
+    int team = GetClientTeam(client);
+    if (team == 2 || team == 3) 
+        return Plugin_Stop;
+
+    int randomTeam = GetRandomInt(2, 3);
+    ChangeClientTeam(client, randomTeam);
+
+    CS_RespawnPlayer(client);
+
+    return Plugin_Stop;
 }
