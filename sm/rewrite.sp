@@ -27,13 +27,14 @@ char g_CurrentMap[32]; // i think 16 would be enough but just in case someone ge
 // Database
 Database g_db;
 
-
+int g_ConnectedPlayers = 0;
 // funcs
 public void OnPluginStart() {
 	RegServerCmd("sm_setwhitelist", CMD_WHITELIST);
 	RegServerCmd("sm_setranktype", CMD_SETRANKTYPE);
 	RegServerCmd("sm_getgamestage", CMD_GETGAMESTAGE);
 	HookEvent("player_connect_full", HANDLER_PLAYERCONN);
+	HookEvent("player_spawn", HANDLER_PLRSPAWN);
 	// for some reason still cannot completely disable team menu, but joining is blocked so fuck it
 	AddCommandListener(HANDLER_JOINTEAM, "teammenu");
 	AddCommandListener(HANDLER_JOINTEAM, "jointeam");
@@ -93,8 +94,22 @@ public Action HANDLER_JOINTEAM(int client, const char[] command, int argc) {
 
 void HANDLER_PLAYERCONN(Event event, const char[] name, bool dontBroadcast) {
 	int cl = GetClientOfUserId(event.GetInt("userid"));
-	
+	g_ConnectedPlayers++;
 	CreateTimer(1.0, TIMER_TEAMASSAIGN, cl);
+	
+	
+}
+void HANDLER_PLRSPAWN(Event event, const char[] name, bool dontBroadcast) {
+    int realPlayers = 0;
+    for (int i = 1; i <= MaxClients; i++) {
+        if (IsClientInGame(i) && !IsFakeClient(i)) {
+            realPlayers++;
+        }
+    }
+
+    if (realPlayers >= g_WhitelistCount) {
+        ServerCommand("mp_warmup_end");
+    }
 }
 
 public Action TIMER_TEAMASSAIGN(Handle tm, any client) {
@@ -137,4 +152,5 @@ public void OnClientAuthorized(int client, const char[] auth) {
 	else {
 		PrintToServer("[Whitelist check] Client %d passed check", client);
 	}
+
 }
