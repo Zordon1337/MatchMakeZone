@@ -19,8 +19,8 @@
     - [X] Submiting Matches
     - [X] ELO System (refuses to work 90% of time)
     - [ ] Fix ongoing matches not removing for 3/4 players
-    - [ ] Implement waiting for all players to join
-    - [ ] Implement proper match end
+    - [X] Implement waiting for all players to join
+    - [X] Implement proper match end
     - [ ] Level System
     - [ ] Rank display like in rankme plugin(probably will not be done)
 - Other
