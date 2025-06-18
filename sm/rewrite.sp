@@ -84,7 +84,8 @@ public Action CMD_SETRANKTYPE(int args) {
 
 public Action CMD_GETGAMESTAGE(int args) {
 	// im thinking also, about making instead of just getting game stage, blocking rcon connection instead and do an check on matchmaker side, anyways currently todo
-	return g_GameStage;
+	PrintToServer(g_GameStage)
+    return Plugin_Handled;
 }
 
 public void OnDatabaseConn(Handle own, Handle handle, const char[] err, any data) {
@@ -520,7 +521,7 @@ public Action Timer_KickPlayers(Handle timer)
             KickClient(i, "Match ended. Returning to queue...");
         }
     }
-
+    g_GameStage = 0;
     return Plugin_Stop;
 }
 
