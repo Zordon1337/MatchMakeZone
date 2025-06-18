@@ -123,8 +123,8 @@ public void OnClientAuthorized(int client, const char[] auth) {
 	bool bIsAllowed = false;
 	
 	for (int i = 0; i < g_WhitelistCount; i++) {
-		PrintToServer("[Whitelist check] Checking %d: %s".i, g_Whitelist[i]);
-		if(StrEqual(g_Whitelist[i], auth])) {
+		PrintToServer("[Whitelist check] Checking %d: %s",i, g_Whitelist[i]);
+		if(StrEqual(g_Whitelist[i], auth)) {
 			bIsAllowed = true;
 			break;
 		}
